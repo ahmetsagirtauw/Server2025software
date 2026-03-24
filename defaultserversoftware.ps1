@@ -19,11 +19,12 @@ if (-not (Test-Path $tempPath)) {
 # ============================================================
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $logPath = "$tempPath\setup_$timestamp.log"
-Start-Transcript -Path $logPath
+$transcriptPath = "$tempPath\setup_$timestamp.transcript.log"
+Start-Transcript -Path $transcriptPath
 
 function Write-Log {
     param([string]$message)
-    $message | Add-Content -Path $logPath
+    $message | Add-Content -Path $logPath -Encoding utf8
 }
 
 function Write-Status {
@@ -37,8 +38,8 @@ Write-Log "[$(Get-Date)] Script gestart"
 # ============================================================
 # Software download locaties
 # ============================================================
-$withSecureUrl = "https://raw.githubusercontent.com/bramlever-tauw/Server2025software/main/ElementsAgentOfflineInstaller.msi"
-$rapid7Url     = "https://raw.githubusercontent.com/bramlever-tauw/Server2025software/main/agentInstaller-x86_64.msi"
+$withSecureUrl = "https://raw.githubusercontent.com/ahmetsagirtauw/Server2025software/main/ElementsAgentOfflineInstaller.msi"
+$rapid7Url     = "https://raw.githubusercontent.com/ahmetsagirtauw/Server2025software/main/agentInstaller-x86_64.msi"
 
 $withSecureDest = "$tempPath\ElementsAgentOfflineInstaller.msi"
 $rapid7Dest     = "$tempPath\agentInstaller-x86_64.msi"
