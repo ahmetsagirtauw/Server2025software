@@ -18,25 +18,8 @@ if (-not (Test-Path $tempPath)) {
 # Logging setup
 # ============================================================
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss_fff"
-$logPath = "$tempPath\setup_$timestamp.log"
 $transcriptPath = "$tempPath\setup_$timestamp.transcript.log"
 Start-Transcript -Path $transcriptPath
-
-function Write-Log {
-    param([string]$message)
-    try {
-        $message | Add-Content -Path $logPath -Encoding utf8 -ErrorAction Stop
-    }
-    catch {
-        Start-Sleep -Milliseconds 200
-        try {
-            $message | Add-Content -Path $logPath -Encoding utf8 -ErrorAction SilentlyContinue
-        }
-        catch {
-            # Logging should never break provisioning flow
-        }
-    }
-}
 
 function Write-Status {
     param([string]$status)
@@ -44,7 +27,7 @@ function Write-Status {
     $status | Out-File -FilePath $statusFile -Encoding utf8
 }
 
-Write-Log "[$(Get-Date)] Script gestart"
+Write-Host "[$(Get-Date)] Script gestart"
 
 # ============================================================
 # Software download locaties
@@ -55,14 +38,15 @@ $rapid7Url     = "https://raw.githubusercontent.com/ahmetsagirtauw/Server2025sof
 $withSecureDest = "$tempPath\ElementsAgentOfflineInstaller.msi"
 $rapid7Dest     = "$tempPath\agentInstaller-x86_64.msi"
 
-Write-Log "[$(Get-Date)] Downloaden van MSI bestanden..."
+Write-Host "[$(Get-Date)] Downloaden van MSI bestanden..."
 
+$ProgressPreference = 'SilentlyContinue'
 try {
     Invoke-WebRequest -Uri $withSecureUrl -OutFile $withSecureDest -UseBasicParsing
     Invoke-WebRequest -Uri $rapid7Url -OutFile $rapid7Dest -UseBasicParsing
 }
 catch {
-    Write-Log "Download mislukt: $_"
+    Write-Host "Download mislukt: $_"
     Write-Status "FAILED: Download error"
     Stop-Transcript
     exit 3
@@ -71,12 +55,12 @@ catch {
 # ============================================================
 # Installatie WithSecure
 # ============================================================
-Write-Log "[$(Get-Date)] Installatie WithSecure agent gestart..."
+Write-Host "[$(Get-Date)] Installatie WithSecure agent gestart..."
 
 $withSecure = Start-Process msiexec.exe -ArgumentList "/i `"$withSecureDest`" VOUCHER=$VOUCHER /quiet /norestart" -Wait -PassThru
 
 if ($withSecure.ExitCode -ne 0) {
-    Write-Log "WithSecure installatie mislukt. Exitcode: $($withSecure.ExitCode)"
+    Write-Host "WithSecure installatie mislukt. Exitcode: $($withSecure.ExitCode)"
     Write-Status "FAILED: WithSecure install error"
     Stop-Transcript
     exit 2
@@ -85,12 +69,12 @@ if ($withSecure.ExitCode -ne 0) {
 # ============================================================
 # Installatie Rapid7
 # ============================================================
-Write-Log "[$(Get-Date)] Installatie Rapid7 agent gestart..."
+Write-Host "[$(Get-Date)] Installatie Rapid7 agent gestart..."
 
 $rapid7 = Start-Process msiexec.exe -ArgumentList "/i `"$rapid7Dest`" CUSTOMTOKEN=$CUSTOMTOKEN /quiet /norestart" -Wait -PassThru
 
 if ($rapid7.ExitCode -ne 0) {
-    Write-Log "Rapid7 installatie mislukt. Exitcode: $($rapid7.ExitCode)"
+    Write-Host "Rapid7 installatie mislukt. Exitcode: $($rapid7.ExitCode)"
     Write-Status "FAILED: Rapid7 install error"
     Stop-Transcript
     exit 2
@@ -99,7 +83,7 @@ if ($rapid7.ExitCode -ne 0) {
 # ============================================================
 # Afronding
 # ============================================================
-Write-Log "[$(Get-Date)] Alle software succesvol geïnstalleerd en reboot wordt ingepland..."
+Write-Host "[$(Get-Date)] Alle software succesvol geïnstalleerd en reboot wordt ingepland..."
 
 # Maak een geplande taak die over 30 seconden reboot
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Restart-Computer -Force`""
