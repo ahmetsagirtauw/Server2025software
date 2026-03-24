@@ -17,14 +17,25 @@ if (-not (Test-Path $tempPath)) {
 # ============================================================
 # Logging setup
 # ============================================================
-$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss_fff"
 $logPath = "$tempPath\setup_$timestamp.log"
 $transcriptPath = "$tempPath\setup_$timestamp.transcript.log"
 Start-Transcript -Path $transcriptPath
 
 function Write-Log {
     param([string]$message)
-    $message | Add-Content -Path $logPath -Encoding utf8
+    try {
+        $message | Add-Content -Path $logPath -Encoding utf8 -ErrorAction Stop
+    }
+    catch {
+        Start-Sleep -Milliseconds 200
+        try {
+            $message | Add-Content -Path $logPath -Encoding utf8 -ErrorAction SilentlyContinue
+        }
+        catch {
+            # Logging should never break provisioning flow
+        }
+    }
 }
 
 function Write-Status {
